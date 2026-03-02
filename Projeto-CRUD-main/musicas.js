@@ -53,7 +53,9 @@ async function fazerCoisas(fastify, options){
 
     fastify.get('/ouvirMusicas', async(request, reply) =>{
         try{
-            const [rows] = await pool.execute('SELECT * FROM musicas WHERE id_usuarios = ?', [id_usuarios]);
+
+            //entender melhor isso depois
+            const [rows] = await pool.execute('SELECT id_musicas, url_foto, letra, nome, artista FROM musicas INNER JOIN playlist ON musicas.id_musicas = playlist.id_musica WHERE playlist.id_usuarios = ?', [id_usuarios]);
 
             const mostrarMusicas = rows[0];
 
@@ -71,13 +73,16 @@ async function fazerCoisas(fastify, options){
 
     fastify.post('/ouvirMusicas', async(request, reply) => {
         try{
-            const postarDados = request.body;
+            const {id_usuarios, id_musicas} = request.body;
             //const salvarBanco = await fazer a conexão de enviar no post para o mysql
-            const [rows] = await pool.execute('INSERT INTO ')
+            const [result] = await pool.execute('INSERT INTO playlist (id_usuarios, id_musicas) VALUES (?, ?)', [id_usuarios, id_musicas]);
 
+            if(result.affectedRows === 0){
+                return reply.status.send({
+                    message: "Erro ao requisitar o banco"});
+            }
             return reply.status(201).send({
-                message: "Deu tudo certo!",
-                salvarDados: salvarBanco
+                message: "Deu tudo certo!"
             }); 
 
         }catch(error){  
@@ -89,9 +94,14 @@ async function fazerCoisas(fastify, options){
 
     fastify.put('/ouvirMusicas/:id', async(request, reply) => {
         try{
-            const{id} = request.params.id;
-            const dados = request.body;
+            const{id_musicas_antigas, id_usuarios} = request.params;
+            const {id_musica_nova} = request.body;
 
+            const [result] = pool.execute('UPDATE playlist SET id_musica_nova = ? WHERE id_usuarios = ? AND id_musicas_antigas = ?', [id_musica_nova, id_usuarios, id_musicas_antigas] [id_musicas, id_usuarios]);
+
+            if(result.AffectedRows === 0){
+                return 
+            }
 
             //const atualizarDados = await //TODO
             if(!atualizarDados){
@@ -100,19 +110,44 @@ async function fazerCoisas(fastify, options){
                 })
             }
 
-            return reply.status(200).send(){
+            return reply.status(200).send({
                 message: "Deu tudo certo! :D",
                 atualizarDados: atualizarDados
-            }
+            })
+              
+      
 
         }catch(error){  
             return reply.status(500).send({
                 message: "Erro :("
             });
         };
-    } )
+    } );
+
+    fastify.delete('/ouvirMusica', async(request, reply) => {
+       try{
+
+        const {id_musicas, id_usuarios} = request.params;
+
+        const [result] = await pool.execute('DELETE FROM playlist WHERE id_usuarios = ? AND id_musicas = ?', [id_musicas, id_usuarios]);
+
+        if(result.affectedRows === 0){
+            return reply.status(401).send({
+                message: "Não foi possivel encontrar a tabela"
+            });
+
+
+        };
+
+        return reply.status(200).send({message: "Deu tudo certo!"});
+
+       } catch(error) {
+            return reply.status(500).send({erro: "Erro no catch do delete"});
+       };
+    });
 
 }
+
 
 
 // quando for fazer o cadastro: const salt = await bcrypt.genSalt(10);
