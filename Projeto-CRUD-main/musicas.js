@@ -73,6 +73,7 @@ async function fazerCoisas(fastify, options){
         try{
             const postarDados = request.body;
             //const salvarBanco = await fazer a conexão de enviar no post para o mysql
+            const [rows] = await pool.execute('INSERT INTO ')
 
             return reply.status(201).send({
                 message: "Deu tudo certo!",
